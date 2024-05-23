@@ -1,7 +1,8 @@
 # import required modules
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 from dotenv import load_dotenv
 import selenium.common.exceptions
 import time
@@ -13,12 +14,10 @@ load_dotenv()
 
 USERNAME = os.getenv('USERNAME_VAR')
 PASSWORD = os.getenv('PASSWORD_VAR')
-# TARGET_PROFILE ='tradisplaid'
- 
  
 # get instagram account credentials
-username = input(USERNAME)
-password = input(PASSWORD)
+username = USERNAME
+password = PASSWORD
  
 url = 'https://instagram.com/' + \
     input('tradisplaid')
@@ -29,23 +28,17 @@ def path():
      
 def url_name(url):
     chrome.get(url)
-    time.sleep(4)
      
 def login(username, your_password):
-    log_but = chrome.find_element(By.CLASS_NAME, value="ab1y")
-    time.sleep(2)
-    log_but.click()
-    time.sleep(4)
-    usern = chrome.find_element(By.CLASS_NAME, value="username")
-    usern.send_keys(username)
-    passw = chrome.find_element(By.CLASS_NAME, value="password")
-    passw.send_keys(your_password)
-    passw.send_keys(Keys.RETURN)
+    wait = WebDriverWait(chrome, 15)
+    wait.until(EC.element_to_be_clickable((By.NAME, "username"))).send_keys(username)
+    wait.until(EC.element_to_be_clickable((By.NAME, "password"))).send_keys(your_password)
+    chrome.find_element("xpath","//button[contains(.,'Log in')]").click()
+
     time.sleep(5.5)
  
-    notn = chrome.find_element(By.CLASS_NAME, value="yWX7d")
- 
-    notn.click()
+    notNowButton = chrome.find_element("xpath","//button[contains(.,'Not Now')]")
+    notNowButton.click()
     time.sleep(3)
 
 def first_post():

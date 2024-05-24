@@ -1,8 +1,11 @@
 # import required modules
 from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+
 from dotenv import load_dotenv
 import selenium.common.exceptions
 import time
@@ -14,13 +17,14 @@ load_dotenv()
 
 USERNAME = os.getenv('USERNAME_VAR')
 PASSWORD = os.getenv('PASSWORD_VAR')
+TARGET = os.getenv('TARGET_VAR')
  
 # get instagram account credentials
 username = USERNAME
 password = PASSWORD
+target_profile = TARGET
  
-url = 'https://instagram.com/' + \
-    input('tradisplaid')
+url = 'https://instagram.com/'
  
 def path():
     global chrome
@@ -37,18 +41,30 @@ def login(username, your_password):
 
     time.sleep(5.5)
  
-    notNowButton = chrome.find_element("xpath","//button[contains(.,'Not Now')]")
+    notNowButton = chrome.find_element("xpath","//div[text()='Not now']")
     notNowButton.click()
     time.sleep(3)
+    notif = chrome.find_element("xpath","//button[text()='Not Now']")
+    notif.click()
+    time.sleep(3)
+    search = chrome.find_element(By.CSS_SELECTOR, "[aria-label='Search']")
+    search.click()
+    time.sleep(3)
+    chrome.find_element(By.CSS_SELECTOR, "[aria-label='Search input']").send_keys(target_profile)
+    time.sleep(3)
+    profile = chrome.find_element("xpath", '//a[contains(@href,"{}/")]'.format(target_profile))
+    profile.click()
+    time.sleep(3)
+
 
 def first_post():
-    pic = chrome.find_element(By.CLASS_NAME, value="kIKUG").click()
+    pic = chrome.find_element(By.CLASS_NAME, value="_aagu").click()
     time.sleep(2)
      
 # Function to get next post
 def next_post():
     try:
-        nex = chrome.find_element(By.CLASS_NAME, value="coreSpriteRightPaginationArrow")
+        nex = chrome.find_element(By.CSS_SELECTOR, "[aria-label='Next']")
         return nex
     except selenium.common.exceptions.NoSuchElementException:
         return 0

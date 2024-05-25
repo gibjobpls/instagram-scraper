@@ -77,15 +77,13 @@ def download_allposts():
     save_content(post_num)
 
     is_next = next_post()
-    c=5
-    while(c>1):
+    while(True):
         if is_next != False:
             post_num = post_num +1
             is_next.click()
             time.sleep(5)
             try:
                 save_content(post_num)
-                c = c-1
             except selenium.common.exceptions.NoSuchElementException:
                     print("finished")
             
@@ -101,7 +99,6 @@ def save_content(number):
      
     try:
         load_more_comment = chrome.find_element(By.CSS_SELECTOR, "[aria-label='Load more comments']")
-        # print("more comments button", load_more_comment)
         print('more comments')
         i = 0
         while load_more_comment:
@@ -121,6 +118,7 @@ def save_content(number):
         container = c.find_element(By.CLASS_NAME,'_a9zr')
         content = container.find_element(By.TAG_NAME,'span').text
         comment_name = content.replace('\n', ' ').strip().rstrip()
+
         comment_con = c.find_element(By.CLASS_NAME,'_a9zs')
         comment = comment_con.find_element(By.TAG_NAME,'span').text
         comment_content = comment.replace('\n', ' ').strip().rstrip()
@@ -130,8 +128,8 @@ def save_content(number):
         user_names.append(comment_name)
         user_comments.append(comment_content)
 
-    print('found: ',user_names)
-    print("comments", user_comments)
+    # print('found: ',user_names)
+    # print("comments", user_comments)
 
 
 def write_comments():

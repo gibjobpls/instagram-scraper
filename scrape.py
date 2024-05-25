@@ -1,17 +1,14 @@
 # import required modules
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
-
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 from dotenv import load_dotenv
 import selenium.common.exceptions
 import time
-from bs4 import BeautifulSoup as bs
-import requests
 import os
+import pandas as pd
 
 load_dotenv()
 
@@ -25,16 +22,22 @@ password = PASSWORD
 target_profile = TARGET
  
 url = 'https://instagram.com/'
+
+user_names = []
+user_comments = []
+posts = []
+
  
 def path():
     global chrome
+    global wait
     chrome = webdriver.Chrome()
+    wait = WebDriverWait(chrome, 15)
      
 def url_name(url):
     chrome.get(url)
      
 def login(username, your_password):
-    wait = WebDriverWait(chrome, 15)
     wait.until(EC.element_to_be_clickable((By.NAME, "username"))).send_keys(username)
     wait.until(EC.element_to_be_clickable((By.NAME, "password"))).send_keys(your_password)
     chrome.find_element("xpath","//button[contains(.,'Log in')]").click()
@@ -46,25 +49,22 @@ def login(username, your_password):
     time.sleep(3)
     notif = chrome.find_element("xpath","//button[text()='Not Now']")
     notif.click()
-    time.sleep(3)
-    search = chrome.find_element(By.CSS_SELECTOR, "[aria-label='Search']")
-    search.click()
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[aria-label='Search']"))).click()
     time.sleep(3)
     chrome.find_element(By.CSS_SELECTOR, "[aria-label='Search input']").send_keys(target_profile)
     time.sleep(3)
-    profile = chrome.find_element("xpath", '//a[contains(@href,"{}/")]'.format(target_profile))
-    profile.click()
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//a[contains(@href,"{}/")]'.format(target_profile)))).click()
     time.sleep(3)
 
 
 def first_post():
-    pic = chrome.find_element(By.CLASS_NAME, value="_aagu").click()
+    chrome.find_element(By.CLASS_NAME, value="_aagu").click()
     time.sleep(2)
      
 # Function to get next post
 def next_post():
     try:
-        nex = chrome.find_element(By.CSS_SELECTOR, "[aria-label='Next']")
+        nex = chrome.find_element(By.CLASS_NAME, value="_abl-")
         return nex
     except selenium.common.exceptions.NoSuchElementException:
         return 0
@@ -73,131 +73,79 @@ def download_allposts():
  
     # open First Post
     first_post()
- 
-    user_name = url.split('/')[-1]
- 
-    # check if folder corresponding to user name exist or not
-    if(os.path.isdir(user_name) == False):
- 
-        # Create folder
-        os.mkdir(user_name)
- 
-    multiple_images = nested_check()
- 
-    if multiple_images:
-        nescheck = multiple_images
-        count_img = 0
-         
-        while nescheck:
-            elem_img = chrome.find_element(By.CLASS_NAME, value='rQDP3')
- 
-            # Function to save nested images
-            save_multiple(user_name+'/'+'content1.'+str(count_img), elem_img)
-            count_img += 1
-            nescheck.click()
-            nescheck = nested_check()
- 
-        # pass last_img_flag True
-        save_multiple(user_name+'/'+'content1.' +
-                      str(count_img), elem_img, last_img_flag=1)
-    else:
-        save_content('_97aPb', user_name+'/'+'content1')
-    c = 2
-     
-    while(True):
-        next_el = next_post()
-         
-        if next_el != False:
-            next_el.click()
-            time.sleep(1.3)
-             
+    post_num=1
+    save_content(post_num)
+
+    is_next = next_post()
+    c=5
+    while(c>1):
+        if is_next != False:
+            post_num = post_num +1
+            is_next.click()
+            time.sleep(5)
             try:
-                multiple_images = nested_check()
-                 
-                if multiple_images:
-                    nescheck = multiple_images
-                    count_img = 0
-                     
-                    while nescheck:
-                        elem_img = chrome.find_element(By.CLASS_NAME, value='rQDP3')
-                        save_multiple(user_name+'/'+'content' +
-                                      str(c)+'.'+str(count_img), elem_img)
-                        count_img += 1
-                        nescheck.click()
-                        nescheck = nested_check()
-                    save_multiple(user_name+'/'+'content'+str(c) +
-                                  '.'+str(count_img), elem_img, 1)
-                else:
-                    save_content('_97aPb', user_name+'/'+'content'+str(c))
-             
+                save_content(post_num)
+                c = c-1
             except selenium.common.exceptions.NoSuchElementException:
-                print("finished")
-                return
-         
+                    print("finished")
+            
+                    return
         else:
+            write_comments()
             break
-         
-        c += 1
+    
+    write_comments()
  
-def save_content(class_name, img_name):
-    time.sleep(0.5)
+def save_content(number):
+    time.sleep(5)
      
     try:
-        pic = chrome.find_element(class_name)
-     
-    except selenium.common.exceptions.NoSuchElementException:
-        print("Either This user has no images or you haven't followed this user or something went wrong")
-        return
-     
-    html = pic.get_attribute('innerHTML')
-    soup = bs(html, 'html.parser')
-    link = soup.find('video')
-     
-    if link:
-        link = link['src']
-     
-    else:
-        link = soup.find('img')['src']
-    response = requests.get(link)
-     
-    with open(img_name, 'wb') as f:
-        f.write(response.content)
-    time.sleep(0.9)
-     
-def save_multiple(img_name, elem, last_img_flag=False):
-    time.sleep(1)
-    l = elem.get_attribute('innerHTML')
-    html = bs(l, 'html.parser')
-    biglist = html.find_all('ul')
-    biglist = biglist[0]
-    list_images = biglist.find_all('li')
-     
-    if last_img_flag:
-        user_image = list_images[-1]
-     
-    else:
-        user_image = list_images[(len(list_images)//2)]
-    video = user_image.find('video')
-     
-    if video:
-        link = video['src']
-     
-    else:
-        link = user_image.find('img')['src']
-    response = requests.get(link)
-     
-    with open(img_name, 'wb') as f:
-        f.write(response.content)
- 
-# Function to check if the post is nested
-def nested_check():
-    try:
-        time.sleep(1)
-        nes_nex = chrome.find_element('coreSpriteRightChevron  ')
-        return nes_nex
-     
-    except selenium.common.exceptions.NoSuchElementException:
-        return 0
+        load_more_comment = chrome.find_element(By.CSS_SELECTOR, "[aria-label='Load more comments']")
+        # print("more comments button", load_more_comment)
+        print('more comments')
+        i = 0
+        while load_more_comment:
+            load_more_comment.click()
+            time.sleep(7)
+            load_more_comment = chrome.find_element(By.CSS_SELECTOR, "[aria-label='Load more comments']")
+            print(i)
+            print("Found {}".format(str(load_more_comment)))
+            i += 1
+    except Exception as e:
+        print("No more comments")
+        print(e)
+        pass
+
+    comment = chrome.find_elements(By.CLASS_NAME,'_a9ym')
+    for c in comment:
+        container = c.find_element(By.CLASS_NAME,'_a9zr')
+        content = container.find_element(By.TAG_NAME,'span').text
+        comment_name = content.replace('\n', ' ').strip().rstrip()
+        comment_con = c.find_element(By.CLASS_NAME,'_a9zs')
+        comment = comment_con.find_element(By.TAG_NAME,'span').text
+        comment_content = comment.replace('\n', ' ').strip().rstrip()
+
+        # print("these COMMENTS", content)
+        posts.append(number)
+        user_names.append(comment_name)
+        user_comments.append(comment_content)
+
+    print('found: ',user_names)
+    print("comments", user_comments)
+
+
+def write_comments():
+    temp = {}
+    # print(len(posts), len(user_names), len(user_comments))
+    temp.update({'post':posts, 'name':user_names, "comment": user_comments})
+    print('ALL COMMENTS: ',temp)
+    print("Writing to file")
+    fname = '{}.xlsx'.format(target_profile)
+
+    df = pd.DataFrame(temp)
+    df.to_excel(fname)
+
+
  
 # Driver Code
 path()
